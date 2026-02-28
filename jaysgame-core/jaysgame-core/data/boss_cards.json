@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Cougar",
+    "attack": 8,
+    "damage": 1,
+    "defense": 12,
+    "health": 1,
+    "boss_summon": ""
+  },
+  {
+    "name": "Grizzly Bear",
+    "attack": 5,
+    "damage": 1,
+    "defense": 14,
+    "health": 2,
+    "boss_summon": ""
+  },
+  {
+    "name": "Ghoul",
+    "attack": 8,
+    "damage": 1,
+    "defense": 15,
+    "health": 1,
+    "boss_summon": ""
+  },
+  {
+    "name": "Hiveling Queen",
+    "attack": 8,
+    "damage": 1,
+    "defense": 18,
+    "health": 2,
+    "boss_summon": "do_hiveling_queen_boss_summon"
+  }
+]
