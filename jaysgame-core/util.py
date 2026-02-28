@@ -27,6 +27,9 @@ def safe_prompt(prompt_msg, default_value=""):
       continue
   return choice
 
+def pretty_print_coordinate(x, y):
+  return f"({x},{y})"
+
 def is_edge_tile(x, y):
   if (x == 0 or 
       x == config.board_size-1 or

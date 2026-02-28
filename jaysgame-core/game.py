@@ -10,44 +10,6 @@ from tile import Tile
 from util import *
 import config
 
-# TODO
-#  - Print basic map (either room or whole board)
-#  - Attack skills
-#    - melee
-#    - ranged
-#    - fire
-#    - water
-#    - wind
-#    - earth
-#  - Defense skills
-#    - defense
-#    - block
-#  - Utility skills
-#    - loot
-#    - sneak
-#    - lockpick
-#    - trap
-#  - Items
-#  - Aggro
-#  - Sneak
-#  - Treasure chests
-#  - Game statistics
-#  - Generalize menus and help menus.
-#  - Return some clear indication when a command was not valid for all commands.
-#  - Standardize naming, e.g. tiles should be called rooms everywhere. Passages should be doors.
-
-# Questions/Notes
-#  - Players can leave a tile if it still has monsters on it, but they may not enter and leave it on the same turn (forced to fight).
-#  - Check if tile is clear after every removal? IDK this may be tricky.
-
-# Bugs
-#  - Cleared message should come before revealing other tiles
-#  - Player should have chance to apply skills before opening door
-#  - Log should say what direction the trap was triggered in
-#  - Win condition not checked soon enough after character dies. Try checking win condition after every damage application.
-#  - Entity exists in self.current_turn_id, but not self.entities. Not sure exact conditions to reproduce.
-
-
 class Game():
   def __init__(self, board_size):
     self.running = False
@@ -121,15 +83,14 @@ class Game():
     elif (direction == "west"):
       return self.tiles.get((tile.x - 1, tile.y))
 
-  # Ok so why did we get no description for the start tile?
-  def get_neighbor_description(self, neighbor):
-    description = ""
-    if neighbor.start_tile:
-      description += "(Start Tile) "
-    if (len(neighbor.enemies) > 0):
-      description += neighbor.get_enemy_names()
-      description += " lie in wait."
-    return description
+  # def get_neighbor_description(self, neighbor):
+  #   description = ""
+  #   if neighbor.start_tile:
+  #     description += "(Start Tile) "
+  #   if (len(neighbor.enemies) > 0):
+  #     description += neighbor.get_enemy_names()
+  #     description += " lie in wait."
+  #   return description
 
   def add_entity(self, entity):
     self.entities[entity.id] = entity
@@ -156,11 +117,9 @@ class Game():
     location.remove_entity(entity)
 
     if (isinstance(entity, Monster)):
-      # del location.enemies[entity.id]
       self.monster_graveyard.append_card(entity)
 
     if (isinstance(entity, Boss)):
-      # del location.enemies[entity.id]
       self.boss_graveyard.append_card(entity)
 
     # Win condition should be checked any time an entity is removed
@@ -239,15 +198,19 @@ class Game():
             not neighbor.revealed):
           self.reveal_tile(neighbor, tile)
 
-  def display_intro_text(self):
+  def get_intro_text(self):
     players = self.get_players()
     player1 = players[0]
     if self.scenario == 2:
-      msg = f"You, {player1.name}, have been sent to slay the {self.target_boss_name}."
+      msg = f"  You, {player1.name}, have been sent to slay the {self.target_boss_name}."
+      msg += f"\n  The {self.target_boss_name} is rumored to live in the crypts of a local monastery."
+      msg += "\n  Searching through the building, you find a trapdoor hidden in the floor."
+      msg += f"\n  Crawling through, you find yourself in a dank crypt."
     else:
-      msg = "You, " + player1.name + ", have fallen through a trap door while exploring."
-    msg += "\nAround you are storage crates, barrels, and cobwebs."
-    prompt(msg)
+      msg = "  You, " + player1.name + ", have fallen through a trap door while exploring."
+    msg += "\n  Around you are storage crates, barrels, and cobwebs."
+    msg += "\n  This room has a single door leading deeper."
+    return msg
 
   def start(self):
     self.running = True
@@ -255,7 +218,7 @@ class Game():
     start_tile = self.tiles[self.center_pos]
     start_tile.revealed = True
 
-    self.display_intro_text()
+    prompt(self.get_intro_text())
     print("\n" + self.menu_help_player_turn())
 
     # Add players to start tile
@@ -263,17 +226,21 @@ class Game():
       player.location = start_tile
       player.location.add_entity(player)
 
+    # Provide opportunity to spend skill points
+    player1 = self.get_players()[0]
+    self.menu_player_skill_interrupt(player1)
+
     # Reveal any nearby tiles
     self.reveal_neighbor_tiles(start_tile)
 
   def do_round(self):
-    print("--- Round " + str(self.round_count+1) + " begins. ---")
+    prompt("--- Round " + str(self.round_count+1) + " begins. ---")
 
     # Complete all turns
     self.next_turn()
     while self.current_turn_id != None:
       current_entity = self.entities[self.current_turn_id]
-      if len(self.completed_turns)-1 == 0:
+      if len(self.completed_turns)-1 == 0: # TODO better detection logic
         prompt("--- Starting Player Turns ---")
       elif len(self.completed_turns)-1 == 1:
         prompt("--- Starting Enemy Turns ---")
@@ -288,7 +255,7 @@ class Game():
     self.round_count += 1
 
   def do_turn(self, entity):
-    print(entity.name + " located at (" + str(entity.location.x) + ", " + str(entity.location.y) + ") takes their turn.")
+    prompt(entity.name + " located at (" + str(entity.location.x) + ", " + str(entity.location.y) + ") takes their turn.")
     if(isinstance(entity, Player)):
       self.do_player_turn(entity)
     else:
@@ -310,7 +277,6 @@ class Game():
         prompt("You win the game! ")
         quit()
 
-  # TODO refactor/remove
   def do_player_action(self, player, choice):
     if "_" in choice:
       args = choice.split("_", 1)
@@ -361,7 +327,7 @@ class Game():
     return True
 
   def do_enemy_turn(self, enemy, players):
-    current_tile = enemy.location
+    # current_tile = enemy.location
     # Randomly choose a player to attack
     player_count = len(players)
     if (player_count == 1):
@@ -386,21 +352,21 @@ class Game():
     critical_hit = raw_attack_roll >= player.critical_hit_roll
     attack_roll = raw_attack_roll + attack_skill
     roll_string = str(attack_roll) + " (" + str(raw_attack_roll) + "+" + str(attack_skill) + ")"
-    print(player.name + " rolls a " + roll_string + " to hit")
+    prompt(player.name + " rolls a " + roll_string + " to hit")
 
     # Attack hits
     if attack_roll > defense_skill:
       dmg = player.damage
       if critical_hit:
-        print("Critical hit! +1 damage.")
+        prompt("Critical hit! +1 damage.")
         dmg += 1
       enemy.apply_damage(dmg)
-      print(player.name + " hits " + enemy.name + ", dealing " + str(dmg) + " damage. " + enemy.name + ": " + enemy.get_health_string())
+      prompt(player.name + " hits " + enemy.name + ", dealing " + str(dmg) + " damage. " + enemy.name + ": " + enemy.get_health_string())
       self.update_state()
 
     # Attack misses
     else:
-      print(player.name + " misses " + enemy.name)
+      prompt(player.name + " misses " + enemy.name)
 
   def do_enemy_attack_player(self, enemy, player):
     prompt(enemy.name + " attacks " + player.name)
@@ -418,7 +384,7 @@ class Game():
     critical_hit = isinstance(enemy, Player) and raw_attack_roll >= player.critcal_hit_roll
     attack_roll = raw_attack_roll + attack_skill
     roll_string = str(attack_roll) + " (" + str(raw_attack_roll) + "+" + str(attack_skill) + ")"
-    print(enemy.name + " rolls a " + roll_string + " to hit")
+    prompt(enemy.name + " rolls a " + roll_string + " to hit")
 
     if will_block:
       # Get total block roll
@@ -427,25 +393,25 @@ class Game():
       block_skill = player.skills["block"].value
       block_roll = raw_block_roll + block_skill
       roll_string = str(block_roll) + " (" + str(raw_block_roll) + "+" + str(block_skill) + ")"
-      print(player.name + " rolls a " + roll_string + " to block.")
+      prompt(player.name + " rolls a " + roll_string + " to block.")
 
     # Attack blocked
     if will_block and block_roll >= attack_roll:
-      print(player.name + " blocks the attack from " + enemy.name)
+      prompt(player.name + " blocks the attack from " + enemy.name)
 
     # Attack hits
     elif attack_roll > defense_skill:
       dmg = enemy.damage
-      if critical_hit:
-        print("Critical hit! +1 damage.")
+      if critical_hit: # Confirm with Jay if enemies can score critical hits.
+        prompt("Critical hit! +1 damage.")
         dmg += 1
       player.apply_damage(dmg)
-      print(enemy.name + " hits " + player.name + ", dealing " + str(dmg) + " damage. " + player.name + ": " + player.get_health_string())
+      prompt(enemy.name + " hits " + player.name + ", dealing " + str(dmg) + " damage. " + player.name + ": " + player.get_health_string())
       self.update_state()
 
     # Attack misses
     else:
-      print(enemy.name + " misses " + player.name)
+      prompt(enemy.name + " misses " + player.name)
 
   def do_trap(self, trap, revealing_tile):
     prompt("A " + trap.name + " is triggered as you open the door to the next room.")
@@ -454,14 +420,14 @@ class Game():
       raw_roll = roll()
       trap_bonus = player.get_skill_value("trap")
       trap_roll = raw_roll + trap_bonus
-      print(f"{player.name} rolls a {str(trap_roll)} ({str(raw_roll)}+{trap_bonus}) to evade")
+      prompt(f"{player.name} rolls a {str(trap_roll)} ({str(raw_roll)}+{trap_bonus}) to evade")
       if trap_roll >= trap.trap:
-        print(f"{player.name} evades {trap.name}")
+        prompt(f"{player.name} evades {trap.name}")
         player.level_up()
         self.menu_player_skill_interrupt(player)
       else:
         player.apply_damage(trap.damage)
-        print(f"{trap.name} deals {trap.damage} damage to {player.name} {player.health}/{player.max_health}")
+        prompt(f"{trap.name} deals {trap.damage} damage to {player.name} {player.health}/{player.max_health}")
         self.update_state()
 
   def menu_player_turn(self, player):
@@ -571,6 +537,7 @@ class Game():
 
   def menu_player_skill_interrupt(self, player):
     print("You may spend skill points before continuing. Type 'continue' when ready.")
+    print(player.get_skill_list())
     answer = ""
     while player.skill_points > 0:
       answer = prompt("/>")
@@ -585,7 +552,7 @@ class Game():
         continue
       if command.startswith("continue"):
         return
-    print("No more points to spend.")
+    prompt("No more points to spend.")
 
   def menu_player_skill(self, player, args):
     args = args[0].lower().split(" ", 2)
@@ -647,6 +614,11 @@ class Game():
       card_list = ""
       for monster in monster_bestiary.values():
         card_list += monster.get_stat_card() + "\n\n"
+      for boss in boss_bestiary.values():
+        card_list += boss.get_stat_card() + "\n\n"
+      return card_list
+    elif term == "boss":
+      card_list = ""
       for boss in boss_bestiary.values():
         card_list += boss.get_stat_card() + "\n\n"
       return card_list

@@ -1,5 +1,6 @@
 from entity import Entity
 from skill import Skill
+from util import *
 import config
 
 class Player(Entity):
@@ -36,9 +37,9 @@ class Player(Entity):
     if self.level < self.max_level:
       self.level += 1
       self.skill_points += 2
-      print(f"{self.name} is now level {self.level}.")
+      prompt(f"{self.name} is now level {self.level}.")
     else:
-      print(self.name + " is at max level.")
+      prompt(self.name + " is at max level.")
 
   def apply_skill(self, skill, value=1):
     curr_val = self.skills[skill].value
