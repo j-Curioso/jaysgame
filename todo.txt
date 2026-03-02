@@ -2,29 +2,37 @@
 
 []Allow attack skill to be provided in attack command.
 [x] Change starting tile to only have one open passage.
-[]Allow choosing skills before reveal first tile.
-[]Add small help in the skill submenu.
+[x]Allow choosing skills before reveal first tile.
+[x]Add small help in the skill submenu.
 [x]Make it more clear when the enemy turns happen in the log.
 []Add more explicit messages when a command was not correct.
-[]Name generator for players.
+[x]Name generator for players.
 []Name generator for enemies (instead of the current numbering system).
-[]Change log to only show enemies on revealed tiles.
-[]Display skill list in skill_interrupt_menu
+[x]Change log to only show enemies on revealed tiles.
+[x]Display skill list in skill_interrupt_menu
+[x]Allow "skill" to display the skill list
+[x]Give clear message when player tries to increase skill past 10.
 []Improve messaging such that it is clear some doors exist, but are not open yet.
 [x]Display player health after a trap
 []Map
 []Auto-complete commands
 []Standardize coordinates (currently is a mix of x,x or (x,x))
-[]Give error message when player tries to increase a skill to more than 10.
-[]Make it more clear in the UI and readme that you cannot progress past a tile until it is cleared. Test what happens currently.
+[x]Give error message when player tries to increase a skill to more than 10.
 []Log should say what direction the trap was triggered in
 []Game stats
 []Add items
 []Add enemy movement
 []Add locked doors
 []Add treasure chests
+[]Generalize player menu and restrict commands by state, rather than having repeated menus.
+[]Add intro text specific to the targetted boss (the Cougar should be in some mountain caves, the Lich should be in a crypt, etc.).
+[]Log to file
+[]Fix summon logic for hivelings/Hiveling Queen
+[]Sometimes passage is shown as "open", but the move command throws an error stating it is blocked.
+[]Add search functionality for traps
 
 --- Issues ---
 [x]Actions go negative. Turn is endless. This happens when only moving on your turn.
 []Sometimes there is a hard crash after revealing the first tile. Cause unknown.
-[]The map may generate without a path to a boss tile
+[]The map may generate without a path to a boss tile.
+[]Players allowed to move through door to non-revealed tile.
