@@ -8,10 +8,13 @@ from boss import Boss
 from trap import Trap
 from tile import Tile
 from util import *
+from stats import Stats
 import config
 
 class Game():
   def __init__(self, board_size):
+    self.stats = Stats()
+
     self.running = False
     self.scenario = config.scenario
 
@@ -36,8 +39,8 @@ class Game():
     self.monster_graveyard = Deck(0, True)
     self.boss_graveyard = Deck(1, True)
 
-    if self.scenario == 0:
-      self.total_number_of_monsters = self.monster_deck.size()
+    # if self.scenario == 0:
+    #   self.total_number_of_monsters = self.monster_deck.size()
 
     if self.scenario == 2:
       boss_choice = random.randint(0, self.boss_deck.size())
@@ -61,8 +64,13 @@ class Game():
         output[(x, y)] = tile
     return output
 
-  def get_number_of_slain_monsters(self):
-    return self.monster_graveyard.size()
+  def calculate_game_stats(self):
+    for card in self.monster_graveyard:
+      if isinstance(card, Monster):
+        self.stats.number_slain_monsters += 1
+      elif isinstance(card, Boss):
+        self.stats.number_slain_bosses += 1
+        self.stats.slain_bosses.append(card.name)
 
   def check_win_condition(self):
     scenario = self.scenario
@@ -82,15 +90,6 @@ class Game():
       return self.tiles.get((tile.x, tile.y + 1))
     elif (direction == "west"):
       return self.tiles.get((tile.x - 1, tile.y))
-
-  # def get_neighbor_description(self, neighbor):
-  #   description = ""
-  #   if neighbor.start_tile:
-  #     description += "(Start Tile) "
-  #   if (len(neighbor.enemies) > 0):
-  #     description += neighbor.get_enemy_names()
-  #     description += " lie in wait."
-  #   return description
 
   def add_entity(self, entity):
     self.entities[entity.id] = entity
@@ -212,23 +211,29 @@ class Game():
     msg += "\n  This room has a single door leading deeper."
     return msg
 
+  def get_game_stats(self):
+    msg = ""
+    msg += f"Bosses Slain: "
+    msg += f"Monsters Slain: {self.monster_graveyard.size()}\n"
+    msg += f"Damage Dealt: "
+    msg += f"Rooms Cleared: "
+    return msg
+
   def start(self):
     self.running = True
     self.round_count = 0
     start_tile = self.tiles[self.center_pos]
     start_tile.revealed = True
 
-    prompt(self.get_intro_text())
+    prompt("\n" + self.get_intro_text())
     print("\n" + self.menu_help_player_turn())
 
     # Add players to start tile
+    # Provide opportunity to spend skill points
     for player in self.get_players():
       player.location = start_tile
       player.location.add_entity(player)
-
-    # Provide opportunity to spend skill points
-    player1 = self.get_players()[0]
-    self.menu_player_skill_interrupt(player1)
+      self.menu_player_skill_interrupt(player)
 
     # Reveal any nearby tiles
     self.reveal_neighbor_tiles(start_tile)
@@ -275,6 +280,7 @@ class Game():
         quit()
       if (self.check_win_condition()):
         prompt("You win the game! ")
+        print(self.get_game_stats())
         quit()
 
   def do_player_action(self, player, choice):
@@ -327,7 +333,6 @@ class Game():
     return True
 
   def do_enemy_turn(self, enemy, players):
-    # current_tile = enemy.location
     # Randomly choose a player to attack
     player_count = len(players)
     if (player_count == 1):
@@ -339,11 +344,15 @@ class Game():
     if enemy.location == target.location:
       self.do_enemy_attack_player(enemy, target)
 
-  def do_player_attack_enemy(self, player, enemy):
-    prompt(player.name + " attacks " + enemy.name)
+  def do_player_attack_enemy(self, player, enemy, chosen_skill=""):
+    print(player.name + " attacks " + enemy.name)
 
     # Choose attack skill and get attack/defense skill values
-    attack_skill_name = self.menu_choose_attack_skill(player)
+    if chosen_skill != "":
+      attack_skill_name = chosen_skill
+    else:
+      attack_skill_name = self.menu_choose_attack_skill(player)
+
     attack_skill = player.skills[attack_skill_name].value
     defense_skill = enemy.skills["defense"].value
 
@@ -432,20 +441,9 @@ class Game():
 
   def menu_player_turn(self, player):
 
-    # TODO
-    # If you move twice in one turn current_tile_open_doors/tile_enemies is not updated.
-    # We need some sort of _update_relevant_location_info method.
-
-    # TODO commands to implement
-    # equip
-    #   list
-    # map
-
     display_current_tile_info = True
     answer = ""
     while player.actions > 0:
-    # while True:
-
       current_tile = player.location
 
       if display_current_tile_info:
@@ -462,6 +460,7 @@ class Game():
       if len(answer) == 0:
         continue
       args = answer.split(" ", 1)
+      # args = answer.split(" ")
       command = args.pop(0)
       command = command.lower()
 
@@ -471,7 +470,7 @@ class Game():
 
       elif command.startswith("look"):
         if len(args) > 0:
-          target = args[0].lower()
+          target = args[0].lower().strip()
           if target in current_tile_open_doors:
             neighbor = self.get_neighbor(current_tile, target)
             enemies = neighbor.get_enemy_names()
@@ -490,10 +489,11 @@ class Game():
         print(player.get_stat_card())
         continue
 
-      # TODO update so enter "skill" or "skill list" lists current skills and their values
       elif command.startswith("skill"):
-        if len(args) > 0:
-          self.menu_player_skill(player, args)
+        if len(args) == 0:
+          args = []
+          args.append("list")
+        self.menu_player_skill(player, args)
         continue
 
       elif command.startswith("search"):
@@ -503,7 +503,7 @@ class Game():
 
       elif command.startswith("move"):
         if len(args) > 0:
-          target = args[0].lower()
+          target = args[0].lower().strip()
           if target in current_tile_open_doors:
             self.move_entity(player, player.location, target)
             player.actions -= 1
@@ -512,17 +512,27 @@ class Game():
             print("Not a valid move")
         continue
 
-      # TODO update to take attack_skill as first argument, then target. 
+      # TODO update to take attack_skill as first argument, then target.
       #      If no skill is provided, then prompt for skill
-      elif command.startswith("attack"):
+      elif command.startswith("attack"): # 
+        # for arg in args:
+        #   print(arg)
+        # print("\n")
         if len(args) == 1:
           target_name = args[0].lower()
           target = player.location.get_enemy_by_name(target_name)
+          # print(f"DEBUG2: target={target_name} args={args}")
           if target != None:
             return f"attack_{target.id}"
-        print("Not a valid target")
+          print("Not a valid target")
         # elif len(args) > 2:
-          
+        #   target_name = args[1].lower()
+        #   target = player.location.get_enemy_by_name(target_name)
+        #   skill = args[0].lower()
+        #   print(f"DEBUG: target={target_name} skill={skill}")
+        #   if target != None:
+        #     return f"attack_{target.id}_{skill}"
+        #   print("Not a valid target")
         continue
 
       elif command.startswith("wait"):
@@ -547,8 +557,9 @@ class Game():
       command = args.pop(0)
       command = command.lower()
       if command.startswith("skill"):
-        if len(args) > 0:
-          self.menu_player_skill(player, args)
+        if len(args) == 0:
+          args = [ "list" ]
+        self.menu_player_skill(player, args)
         continue
       if command.startswith("continue"):
         return
@@ -610,6 +621,7 @@ class Game():
         return True
 
   def do_search(self, term):
+    term = term.strip()
     if term == "*":
       card_list = ""
       for monster in monster_bestiary.values():

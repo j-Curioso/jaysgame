@@ -46,6 +46,8 @@ class Player(Entity):
     if curr_val + value <= self.max_skill_level:
       self.skills[skill].increase(value)
       self.skill_points -= value
+    else:
+      print("Cannot increase a skill to more than 10.")
 
   def get_attack_skills(self):
     attack_skills = []

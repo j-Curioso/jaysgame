@@ -27,8 +27,10 @@ board_size = 7
 
 tile_rotation_direction = 1 # 1=clockwise, -1=counter-clockwise
 open_passage_chance = 5 # 0-20. If roll() is higher than this value, the passage is open
+player_suffix_chance = 7 # 0-20. If roll() is higher than this value, a suffix is added
 
 monster_cards_file = 'data/monster_cards.json'
 trap_cards_file = 'data/trap_cards.json'
 boss_cards_file = 'data/boss_cards.json'
 item_cards_file = 'data/item_cards.json'
+player_names_file = 'data/player_names.json'

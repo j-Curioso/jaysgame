@@ -66,3 +66,19 @@ def build_boss_bestiary(cards_file_path):
                   card['health'],
                   card['boss_summon'])
     boss_bestiary[boss.name.lower()] = boss
+
+def get_player_name():
+  names_file = open(config.player_names_file, 'r')
+  names_json = json.loads(names_file.read())
+  number_of_names = len(names_json["names"])
+  choice = random.randint(0, number_of_names-1)
+  name = names_json["names"][choice]
+
+  use_suffix = roll() > config.player_suffix_chance
+  if use_suffix:
+    number_of_suffixes = len(names_json["suffixes"])
+    choice = random.randint(0, number_of_suffixes-1)
+    suffix = names_json["suffixes"][choice]
+    name = f"{name}{suffix}"
+
+  return name

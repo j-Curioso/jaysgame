@@ -66,6 +66,7 @@ class Deck:
   def draw_specific_card(self, id):
     for card in self.cards:
       if card.id == id:
+        self.cards.remove(card)
         return card
 
   def peek_card(self, idx=-1):

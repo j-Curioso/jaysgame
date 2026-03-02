@@ -36,7 +36,7 @@ class Boss(Entity):
       self.do_hiveling_queen_boss_summon(game)
 
   def do_hiveling_queen_boss_summon(self, game):
-    # When Hiveling Queen is revealed, it summons all remaining Hiveling from deck.
+    # When Hiveling Queen is revealed, it summons all remaining Hivelings from deck.
     queen_location = self.location
     hiveling_ids = []
 
