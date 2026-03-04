@@ -1,8 +1,9 @@
 import random
 import json
 import config
-from monster import Monster
 from boss import Boss
+from monster import Monster
+from trap import Trap
 
 def roll():
   return random.randint(1, 20)
@@ -37,11 +38,14 @@ def is_edge_tile(x, y):
       y == config.board_size-1):
     return True
 
-monster_bestiary = {}
 boss_bestiary = {}
+monster_bestiary = {}
+trap_bestiary = {}
+
 def build_bestiaries():
-  build_monster_bestiary(config.monster_cards_file)
   build_boss_bestiary(config.boss_cards_file)
+  build_monster_bestiary(config.monster_cards_file)
+  build_trap_bestiary(config.trap_cards_file)
 
 def build_monster_bestiary(cards_file_path):
   cards_file = open(cards_file_path, 'r')
@@ -66,6 +70,16 @@ def build_boss_bestiary(cards_file_path):
                   card['health'],
                   card['boss_summon'])
     boss_bestiary[boss.name.lower()] = boss
+
+def build_trap_bestiary(cards_file_path):
+  cards_file = open(cards_file_path, 'r')
+  cards_json = json.loads(cards_file.read())
+  for card in cards_json:
+    trap = Trap(card['name'], 
+                card['life'], 
+                card['trap'], 
+                card['damage'])
+    trap_bestiary[trap.name.lower()] = trap
 
 def get_player_name():
   names_file = open(config.player_names_file, 'r')
