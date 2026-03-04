@@ -29,7 +29,8 @@
 []Log to file
 []Fix summon logic for hivelings/Hiveling Queen
 []Sometimes passage is shown as "open", but the move command throws an error stating it is blocked.
-[]Add search functionality for traps
+[x]Add search functionality for traps
+[x]Refactor player menu code to only check the command, then call a function, passing in the args.
 
 --- Issues ---
 [x]Actions go negative. Turn is endless. This happens when only moving on your turn.
